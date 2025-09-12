@@ -14,35 +14,9 @@ require_login();
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="dashboard.php">
-                <i class="fas fa-database me-2"></i>Research Paper DB
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="authors.php"><i class="fas fa-users me-1"></i> Authors</a></li>
-                    <li class="nav-item"><a class="nav-link" href="papers.php"><i class="fas fa-file-alt me-1"></i> Papers</a></li>
-                    <li class="nav-item"><a class="nav-link" href="journals.php"><i class="fas fa-book me-1"></i> Journals</a></li>
-                    <li class="nav-item"><a class="nav-link" href="institutions.php"><i class="fas fa-building me-1"></i> Institutions</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="conferences.php"><i class="fas fa-calendar-alt me-1"></i> Conferences</a></li>
-                    <li class="nav-item"><a class="nav-link" href="analytics.php"><i class="fas fa-chart-bar me-1"></i> Analytics</a></li>
-                    <li class="nav-item"><a class="nav-link" href="admin.php"><i class="fas fa-cog me-1"></i> Admin</a></li>
-                    <li class="nav-item">
-                        <span class="nav-link text-warning">
-                            <i class="fas fa-user me-1"></i><?php echo $_SESSION['admin_username']; ?>
-                        </span>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="logout.php"><i class="fas fa-sign-out-alt me-1"></i> Logout</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+<?php include 'navbar.php'; ?>
 
+    
     <div class="container mt-5">
         <h1 class="text-center mb-4">
             <i class="fas fa-calendar-alt me-2"></i>Conferences Management
