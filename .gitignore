@@ -1,0 +1,21 @@
+# XAMPP / PHP
+*.log
+*.cache
+*.tmp
+*.bak
+*.swp
+vendor/
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Database dumps (if any)
+*.sql
+
+# Environment files (if you add them)
+.env
