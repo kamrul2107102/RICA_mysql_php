@@ -20,9 +20,14 @@ require_login();
    
 
     <div class="container mt-5">
-        <h1 class="text-center mb-4">
-            <i class="fas fa-building me-2"></i>Institutions Management
-        </h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">
+                <i class="fas fa-building me-2"></i>Institutions Management
+            </h1>
+            <button class="btn btn-primary" onclick="document.getElementById('institutionForm').scrollIntoView({ behavior: 'smooth' })">
+                <i class="fas fa-plus"></i> Add New Institution
+            </button>
+        </div>
         
         <!-- Statistics Cards -->
         <div class="row mb-4">

@@ -5,6 +5,7 @@ header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 require_once '../config.php';
+require_once __DIR__ . '/../includes/sql.php';
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -156,11 +157,14 @@ function handleResetCounters() {
     $results = [];
     
     foreach ($tables as $table => $id_column) {
-        $query = "SELECT MAX($id_column) as max_id FROM $table";
+        $query = sql_named_with('adminQuery.sql', 'GET_TABLE_MAX_ID', [
+            'TABLE' => $table,
+            'ID_COLUMN' => $id_column
+        ]);
         $result = $conn->query($query);
         $max_id = $result->fetch_assoc()['max_id'] + 1;
         
-        $resetQuery = "ALTER TABLE $table AUTO_INCREMENT = $max_id";
+        $resetQuery = sql_named_with('adminQuery.sql', 'RESET_AUTO_INCREMENT', ['TABLE' => $table]);
         if ($conn->query($resetQuery)) {
             $results[$table] = ['success' => true, 'new_auto_increment' => $max_id];
         } else {
@@ -182,16 +186,18 @@ function handleDatabaseStats() {
     $stats = [];
     
     foreach ($tables as $table) {
-        $result = $conn->query("SELECT COUNT(*) as count FROM $table");
+        $countQuery = sql_named_with('adminQuery.sql', 'COUNT_TABLE_ROWS', ['TABLE' => $table]);
+        $result = $conn->query($countQuery);
         $stats[$table] = $result->fetch_assoc()['count'];
     }
     
     // Get database size
-    $sizeQuery = "SELECT 
-        ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) as size_mb 
-        FROM information_schema.tables 
-        WHERE table_schema = '" . DB_NAME . "'";
-    $sizeResult = $conn->query($sizeQuery);
+    $sizeQuery = sql_named('adminQuery.sql', 'GET_DATABASE_SIZE');
+    $stmt = $conn->prepare($sizeQuery);
+    $dbName = DB_NAME;
+    $stmt->bind_param('s', $dbName);
+    $stmt->execute();
+    $sizeResult = $stmt->get_result();
     $dbSize = $sizeResult->fetch_assoc()['size_mb'];
     
     echo json_encode([
@@ -218,7 +224,7 @@ function handleSystemInfo() {
     ];
     
     // Get MySQL status
-    $statusQuery = "SHOW STATUS LIKE 'Uptime'";
+    $statusQuery = sql_named('adminQuery.sql', 'SHOW_MYSQL_UPTIME');
     $statusResult = $conn->query($statusQuery);
     $uptime = $statusResult->fetch_assoc()['Value'];
     $info['mysql_uptime_seconds'] = $uptime;

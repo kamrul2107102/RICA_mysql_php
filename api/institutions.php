@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 require_once '../config.php';
+require_once __DIR__ . '/../includes/sql.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -9,7 +10,7 @@ try {
         case 'GET':
             if (isset($_GET['id'])) {
                 $id = (int)$_GET['id'];
-                $stmt = $conn->prepare("SELECT * FROM Institutions WHERE institution_id = ?");
+                $stmt = $conn->prepare(sql_named('institutionQuery.sql', 'GET_ONE'));
                 $stmt->bind_param("i", $id);
                 $stmt->execute();
                 $result = $stmt->get_result();
@@ -46,7 +47,7 @@ try {
                 
                 $whereClause = $where ? "WHERE " . implode(" AND ", $where) : "";
                 
-                $sql = "SELECT * FROM Institutions $whereClause ORDER BY name LIMIT ? OFFSET ?";
+                $sql = sql_named_with('institutionQuery.sql', 'LIST_WITH_FILTERS', ['WHERE' => $whereClause]);
                 $params[] = $limit;
                 $params[] = $offset;
                 $types .= "ii";
@@ -59,7 +60,7 @@ try {
                 $result = $stmt->get_result();
                 
                 // Get total count for pagination
-                $countSql = "SELECT COUNT(*) as total FROM Institutions $whereClause";
+                $countSql = sql_named_with('institutionQuery.sql', 'COUNT_WITH_FILTERS', ['WHERE' => $whereClause]);
                 $countStmt = $conn->prepare($countSql);
                 if ($where) {
                     $bindParams = array_slice($params, 0, -2);
@@ -91,7 +92,7 @@ try {
             }
             
             // Check for duplicate name
-            $checkStmt = $conn->prepare("SELECT institution_id FROM Institutions WHERE name = ?");
+            $checkStmt = $conn->prepare(sql_named('institutionQuery.sql', 'CHECK_EXISTS_BY_NAME'));
             $checkStmt->bind_param("s", $data['name']);
             $checkStmt->execute();
             if ($checkStmt->get_result()->num_rows > 0) {
@@ -100,7 +101,7 @@ try {
                 exit;
             }
             
-            $stmt = $conn->prepare("INSERT INTO Institutions (name, country, ranking) VALUES (?, ?, ?)");
+            $stmt = $conn->prepare(sql_named('institutionQuery.sql', 'INSERT'));
             $ranking = !empty($data['ranking']) ? (int)$data['ranking'] : null;
             $stmt->bind_param("ssi", $data['name'], $data['country'], $ranking);
             
@@ -128,7 +129,7 @@ try {
             }
             
             // Check if institution exists
-            $checkStmt = $conn->prepare("SELECT institution_id FROM Institutions WHERE institution_id = ?");
+            $checkStmt = $conn->prepare(sql_named('institutionQuery.sql', 'CHECK_EXISTS_BY_ID'));
             $checkStmt->bind_param("i", $data['institution_id']);
             $checkStmt->execute();
             if ($checkStmt->get_result()->num_rows === 0) {
@@ -137,7 +138,7 @@ try {
                 exit;
             }
             
-            $stmt = $conn->prepare("UPDATE Institutions SET name=?, country=?, ranking=? WHERE institution_id=?");
+            $stmt = $conn->prepare(sql_named('institutionQuery.sql', 'UPDATE'));
             $ranking = !empty($data['ranking']) ? (int)$data['ranking'] : null;
             $stmt->bind_param("ssii", $data['name'], $data['country'], $ranking, $data['institution_id']);
             
@@ -156,7 +157,7 @@ try {
             $id = (int)$data['id'];
             
             // Check if institution exists
-            $checkStmt = $conn->prepare("SELECT institution_id FROM Institutions WHERE institution_id = ?");
+            $checkStmt = $conn->prepare(sql_named('institutionQuery.sql', 'CHECK_EXISTS_BY_ID'));
             $checkStmt->bind_param("i", $id);
             $checkStmt->execute();
             if ($checkStmt->get_result()->num_rows === 0) {
@@ -166,11 +167,11 @@ try {
             }
             
             // Update authors to set institution_id to NULL before deletion
-            $updateAuthors = $conn->prepare("UPDATE Authors SET institution_id = NULL WHERE institution_id = ?");
+            $updateAuthors = $conn->prepare(sql_named('institutionQuery.sql', 'UPDATE_AUTHORS_SET_NULL'));
             $updateAuthors->bind_param("i", $id);
             $updateAuthors->execute();
             
-            $stmt = $conn->prepare("DELETE FROM Institutions WHERE institution_id = ?");
+            $stmt = $conn->prepare(sql_named('institutionQuery.sql', 'DELETE_BY_ID'));
             $stmt->bind_param("i", $id);
             
             if ($stmt->execute()) {

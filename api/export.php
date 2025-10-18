@@ -3,6 +3,7 @@ header('Content-Type: text/csv');
 header('Content-Disposition: attachment; filename="export.csv"');
 
 require_once '../config.php';
+require_once __DIR__ . '/../includes/sql.php';
 
 if (!is_logged_in()) {
     header('HTTP/1.1 401 Unauthorized');
@@ -29,7 +30,8 @@ if ($type === 'full') {
 function exportTable($table) {
     global $conn;
     
-    $result = $conn->query("SELECT * FROM $table");
+    $query = sql_named_with('exportQuery.sql', 'GET_ALL_FROM_TABLE', ['TABLE' => $table]);
+    $result = $conn->query($query);
     $output = fopen('php://output', 'w');
     
     // Write headers
@@ -54,12 +56,13 @@ function exportFullDatabase() {
     $output = fopen('php://output', 'w');
     
     // Get all tables
-    $tables = $conn->query("SHOW TABLES");
+    $tables = $conn->query(sql_named('exportQuery.sql', 'SHOW_ALL_TABLES'));
     $tableData = [];
     
     while ($table = $tables->fetch_row()) {
         $tableName = $table[0];
-        $result = $conn->query("SELECT * FROM $tableName");
+        $query = sql_named_with('exportQuery.sql', 'GET_ALL_FROM_TABLE', ['TABLE' => $tableName]);
+        $result = $conn->query($query);
         
         // Write table header
         fputcsv($output, ["=== TABLE: $tableName ==="]);

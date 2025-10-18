@@ -5,6 +5,7 @@ header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 require_once '../config.php';
+require_once __DIR__ . '/../includes/sql.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -48,12 +49,12 @@ function getOverviewAnalytics() {
     global $conn;
     
     $stats = [
-        'total_papers' => $conn->query("SELECT COUNT(*) FROM Papers")->fetch_row()[0],
-        'total_authors' => $conn->query("SELECT COUNT(*) FROM Authors")->fetch_row()[0],
-        'total_citations' => $conn->query("SELECT COUNT(*) FROM Citations")->fetch_row()[0],
-        'total_journals' => $conn->query("SELECT COUNT(*) FROM Journals")->fetch_row()[0],
-        'total_institutions' => $conn->query("SELECT COUNT(*) FROM Institutions")->fetch_row()[0],
-        'total_conferences' => $conn->query("SELECT COUNT(*) FROM Conferences")->fetch_row()[0],
+        'total_papers' => $conn->query(sql_named('analyticsQuery.sql', 'COUNT_TOTAL_PAPERS'))->fetch_row()[0],
+        'total_authors' => $conn->query(sql_named('analyticsQuery.sql', 'COUNT_TOTAL_AUTHORS'))->fetch_row()[0],
+        'total_citations' => $conn->query(sql_named('analyticsQuery.sql', 'COUNT_TOTAL_CITATIONS'))->fetch_row()[0],
+        'total_journals' => $conn->query(sql_named('analyticsQuery.sql', 'COUNT_TOTAL_JOURNALS'))->fetch_row()[0],
+        'total_institutions' => $conn->query(sql_named('analyticsQuery.sql', 'COUNT_TOTAL_INSTITUTIONS'))->fetch_row()[0],
+        'total_conferences' => $conn->query(sql_named('analyticsQuery.sql', 'COUNT_TOTAL_CONFERENCES'))->fetch_row()[0],
     ];
     
     echo json_encode([
@@ -67,19 +68,7 @@ function getTopCitedPapers() {
     
     $limit = min(20, max(1, (int)($_GET['limit'] ?? 10)));
     
-    $query = "
-        SELECT p.paper_id, p.title, p.publication_year,
-               COUNT(c.citation_id) as citation_count,
-               j.name as journal_name,
-               conf.name as conference_name
-        FROM Papers p
-        LEFT JOIN Citations c ON p.paper_id = c.cited_paper_id
-        LEFT JOIN Journals j ON p.journal_id = j.journal_id
-        LEFT JOIN Conferences conf ON p.conference_id = conf.conference_id
-        GROUP BY p.paper_id, p.title, p.publication_year
-        ORDER BY citation_count DESC
-        LIMIT ?
-    ";
+    $query = sql_named('analyticsQuery.sql', 'GET_TOP_CITED_PAPERS');
     
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $limit);
@@ -97,21 +86,7 @@ function getTopAuthors() {
     
     $limit = min(20, max(1, (int)($_GET['limit'] ?? 10)));
     
-    $query = "
-        SELECT a.author_id, a.name, a.email, i.name as institution_name,
-               COUNT(DISTINCT ap.paper_id) as paper_count,
-               COUNT(DISTINCT c.citation_id) as citation_count,
-               ROUND(COUNT(DISTINCT c.citation_id) / GREATEST(COUNT(DISTINCT ap.paper_id), 1), 2) as avg_citations
-        FROM Authors a
-        LEFT JOIN Authorship ap ON a.author_id = ap.author_id
-        LEFT JOIN Papers p ON ap.paper_id = p.paper_id
-        LEFT JOIN Citations c ON p.paper_id = c.cited_paper_id
-        LEFT JOIN Institutions i ON a.institution_id = i.institution_id
-        GROUP BY a.author_id, a.name, a.email
-        HAVING paper_count > 0
-        ORDER BY avg_citations DESC, citation_count DESC
-        LIMIT ?
-    ";
+    $query = sql_named('analyticsQuery.sql', 'GET_TOP_AUTHORS');
     
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $limit);
@@ -127,17 +102,7 @@ function getTopAuthors() {
 function getPublicationStats() {
     global $conn;
     
-    $query = "
-        SELECT 
-            publication_year,
-            COUNT(*) as paper_count,
-            SUM(CASE WHEN journal_id IS NOT NULL THEN 1 ELSE 0 END) as journal_papers,
-            SUM(CASE WHEN conference_id IS NOT NULL THEN 1 ELSE 0 END) as conference_papers
-        FROM Papers
-        WHERE publication_year IS NOT NULL
-        GROUP BY publication_year
-        ORDER BY publication_year DESC
-    ";
+    $query = sql_named('analyticsQuery.sql', 'GET_PUBLICATION_STATS_BY_YEAR');
     
     $result = $conn->query($query);
     $stats = $result->fetch_all(MYSQLI_ASSOC);
@@ -151,19 +116,7 @@ function getPublicationStats() {
 function getInstitutionStats() {
     global $conn;
     
-    $query = "
-        SELECT i.institution_id, i.name, i.country, i.ranking,
-               COUNT(DISTINCT a.author_id) as author_count,
-               COUNT(DISTINCT ap.paper_id) as paper_count,
-               COUNT(DISTINCT c.citation_id) as citation_count
-        FROM Institutions i
-        LEFT JOIN Authors a ON i.institution_id = a.institution_id
-        LEFT JOIN Authorship ap ON a.author_id = ap.author_id
-        LEFT JOIN Papers p ON ap.paper_id = p.paper_id
-        LEFT JOIN Citations c ON p.paper_id = c.cited_paper_id
-        GROUP BY i.institution_id, i.name, i.country, i.ranking
-        ORDER BY citation_count DESC, paper_count DESC
-    ";
+    $query = sql_named('analyticsQuery.sql', 'GET_INSTITUTION_STATS');
     
     $result = $conn->query($query);
     $stats = $result->fetch_all(MYSQLI_ASSOC);

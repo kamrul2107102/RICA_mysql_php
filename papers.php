@@ -1,4 +1,7 @@
-<?php require_once 'config.php'; ?>
+<?php 
+require_once 'config.php';
+require_once __DIR__ . '/includes/sql.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +17,12 @@
     <?php include 'navbar.php'; ?>
 
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Papers Management</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Papers Management</h1>
+            <button class="btn btn-primary" onclick="document.getElementById('paperForm').scrollIntoView({ behavior: 'smooth' })">
+                <i class="fas fa-plus"></i> Add New Paper
+            </button>
+        </div>
         
         <!-- Add Paper Form -->
         <div class="card mb-4">
@@ -41,7 +49,7 @@
                                 <select class="form-select" id="journal_id">
                                     <option value="">Select Journal</option>
                                     <?php
-                                    $journals = $conn->query("SELECT * FROM Journals");
+                                    $journals = $conn->query("SELECT journal_id, name FROM Journals ORDER BY name LIMIT 1000");
                                     while ($journal = $journals->fetch_assoc()) {
                                         echo "<option value='{$journal['journal_id']}'>{$journal['name']}</option>";
                                     }
@@ -53,7 +61,7 @@
                                 <select class="form-select" id="conference_id">
                                     <option value="">Select Conference</option>
                                     <?php
-                                    $conferences = $conn->query("SELECT * FROM Conferences");
+                                    $conferences = $conn->query("SELECT conference_id, name FROM Conferences ORDER BY name LIMIT 1000");
                                     while ($conf = $conferences->fetch_assoc()) {
                                         echo "<option value='{$conf['conference_id']}'>{$conf['name']}</option>";
                                     }
@@ -137,29 +145,65 @@
         // Add/edit paper
         document.getElementById('paperForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
             const formData = {
                 title: document.getElementById('title').value,
-                publication_year: document.getElementById('publication_year').value,
-                abstract: document.getElementById('abstract').value,
+                publication_year: parseInt(document.getElementById('publication_year').value),
+                abstract: document.getElementById('abstract').value || null,
                 journal_id: document.getElementById('journal_id').value || null,
                 conference_id: document.getElementById('conference_id').value || null
             };
 
             const paperId = document.getElementById('paperId').value;
-            const url = `api/papers.php${paperId ? '' : ''}`;
+            const url = 'api/papers.php';
             const method = paperId ? 'PUT' : 'POST';
 
-            if (paperId) formData.paper_id = paperId;
+            if (paperId) {
+                formData.paper_id = parseInt(paperId);
+            }
 
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
+            console.log('Submitting form with method:', method);
+            console.log('Form data:', formData);
 
-            if (response.ok) {
-                loadPapers();
-                resetForm();
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                console.log('Response status:', response.status);
+                
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Failed to parse JSON:', parseError);
+                    console.error('Response was:', responseText);
+                    showAlert('Error: Invalid response from server', 'danger');
+                    return;
+                }
+                
+                console.log('Parsed result:', result);
+
+                if (result.success) {
+                    loadPapers();
+                    resetForm();
+                    showAlert('Paper saved successfully!', 'success');
+                } else {
+                    const errorMsg = result.error || 'Unknown error';
+                    console.error('API Error:', errorMsg, result);
+                    showAlert('Error: ' + errorMsg, 'danger');
+                }
+            } catch (error) {
+                console.error('Error saving paper:', error);
+                showAlert('Error saving paper: ' + error.message, 'danger');
             }
         });
 

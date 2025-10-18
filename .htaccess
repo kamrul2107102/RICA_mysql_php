@@ -1,0 +1,30 @@
+# Enable rewriting
+RewriteEngine On
+
+# Remove trailing slashes
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+)/$ /$1 [L,R=301]
+
+# Error pages
+ErrorDocument 404 /dbProjrct2107102-final/404.php
+ErrorDocument 403 /dbProjrct2107102-final/error.php?code=403&message=Forbidden
+ErrorDocument 500 /dbProjrct2107102-final/error.php?code=500&message=Server+Error
+
+# Security headers
+<IfModule mod_headers.c>
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Disable directory listing
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "^(config|database)\.">
+  Require all denied
+</FilesMatch>
+
+# Deny access to .git
+RedirectMatch 404 /\.git

@@ -17,7 +17,12 @@
 
 
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Journals Management</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Journals Management</h1>
+            <button class="btn btn-primary" onclick="document.getElementById('journalForm').scrollIntoView({ behavior: 'smooth' })">
+                <i class="fas fa-plus"></i> Add New Journal
+            </button>
+        </div>
         
         <!-- Add Journal Form -->
         <div class="card mb-4">
@@ -140,6 +145,9 @@
                 formData.journal_id = parseInt(journalId);
             }
 
+            console.log('Submitting form with method:', method);
+            console.log('Form data:', formData);
+
             try {
                 const response = await fetch(url, {
                     method: method,
@@ -150,18 +158,36 @@
                     body: JSON.stringify(formData)
                 });
 
-                const result = await response.json();
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers.get('content-type'));
+                
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Failed to parse JSON:', parseError);
+                    console.error('Response was:', responseText);
+                    showAlert('Error: Invalid response from server', 'danger');
+                    return;
+                }
+                
+                console.log('Parsed result:', result);
 
                 if (result.success) {
                     loadJournals();
                     resetForm();
                     showAlert('Journal saved successfully!', 'success');
                 } else {
-                    showAlert('Error saving journal', 'danger');
+                    const errorMsg = result.error || 'Unknown error';
+                    console.error('API Error:', errorMsg, result);
+                    showAlert('Error: ' + errorMsg, 'danger');
                 }
             } catch (error) {
                 console.error('Error saving journal:', error);
-                showAlert('Error saving journal', 'danger');
+                showAlert('Error saving journal: ' + error.message, 'danger');
             }
         });
 

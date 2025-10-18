@@ -1,3 +1,26 @@
+# OS / Editor
+.DS_Store
+.vscode/
+*.code-workspace
+
+# Dependencies / Vendors
+vendor/
+composer.lock
+
+# Logs / Cache
+logs/
+*.log
+cache/
+
+# Uploads and generated files
+uploads/
+
+# Environment / secrets
+.env
+.env.local
+
+# Ignored node modules if any
+node_modules/
 # XAMPP / PHP
 *.log
 *.cache

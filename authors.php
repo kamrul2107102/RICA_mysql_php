@@ -17,7 +17,12 @@ require_once __DIR__ . '/includes/sql.php';
     <?php include 'navbar.php'; ?>
 
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Authors Management</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Authors Management</h1>
+            <button class="btn btn-primary" onclick="document.getElementById('authorForm').scrollIntoView({ behavior: 'smooth' })">
+                <i class="fas fa-plus"></i> Add New Author
+            </button>
+        </div>
         
         <!-- Add Author Form -->
         <div class="card mb-4">
@@ -128,6 +133,7 @@ require_once __DIR__ . '/includes/sql.php';
         // Add/edit author
         document.getElementById('authorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
             const formData = {
                 name: document.getElementById('name').value,
                 email: document.getElementById('email').value,
@@ -139,17 +145,40 @@ require_once __DIR__ . '/includes/sql.php';
             const url = `api/authors.php${authorId ? '' : ''}`;
             const method = authorId ? 'PUT' : 'POST';
 
-            if (authorId) formData.author_id = authorId;
+            if (authorId) formData.author_id = parseInt(authorId);
 
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
+            console.log('Submitting form...'); // Debug
+            console.log('Form data:', formData); // Debug
+            console.log('Method:', method); // Debug
+            console.log('URL:', url); // Debug
 
-            if (response.ok) {
-                loadAuthors();
-                resetForm();
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                console.log('Response status:', response.status); // Debug
+                
+                const result = await response.json();
+                console.log('API Response:', result); // Debug
+
+                if (result.success || response.ok) {
+                    showAlert('Author saved successfully!', 'success');
+                    loadAuthors();
+                    resetForm();
+                } else {
+                    const errorMsg = result.error || 'Unknown error';
+                    console.error('API Error:', errorMsg, result);
+                    showAlert('Error: ' + errorMsg, 'danger');
+                }
+            } catch (error) {
+                console.error('Error saving author:', error);
+                showAlert('Error saving author: ' + error.message, 'danger');
             }
         });
 
@@ -186,6 +215,26 @@ require_once __DIR__ . '/includes/sql.php';
         // Export data
         function exportData(table) {
             window.open(`api/export.php?table=${table}`, '_blank');
+        }
+
+        // Show alert
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Remove alert after 3 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
         }
 
         // Load data on page load
