@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once __DIR__ . '/includes/sql.php';
 require_login();
 ?>
 
@@ -30,7 +31,8 @@ require_login();
                         <i class="fas fa-calendar fa-2x mb-2"></i>
                         <h5>Total Conferences</h5>
                         <?php
-                        $total = $conn->query("SELECT COUNT(*) as count FROM Conferences")->fetch_assoc()['count'];
+                        $totalSql = sql_named('conferenceQuery.sql', 'COUNT_TOTAL');
+                        $total = $conn->query($totalSql)->fetch_assoc()['count'];
                         echo "<h3>$total</h3>";
                         ?>
                     </div>
@@ -42,7 +44,8 @@ require_login();
                         <i class="fas fa-map-marker-alt fa-2x mb-2"></i>
                         <h5>Locations</h5>
                         <?php
-                        $locations = $conn->query("SELECT COUNT(DISTINCT location) as count FROM Conferences WHERE location IS NOT NULL")->fetch_assoc()['count'];
+                        $locSql = sql_named('conferenceQuery.sql', 'COUNT_LOCATIONS');
+                        $locations = $conn->query($locSql)->fetch_assoc()['count'];
                         echo "<h3>$locations</h3>";
                         ?>
                     </div>
@@ -54,7 +57,8 @@ require_login();
                         <i class="fas fa-file-alt fa-2x mb-2"></i>
                         <h5>Conference Papers</h5>
                         <?php
-                        $papers = $conn->query("SELECT COUNT(*) as count FROM Papers WHERE conference_id IS NOT NULL")->fetch_assoc()['count'];
+                        $papersSql = sql_named('conferenceQuery.sql', 'COUNT_PAPERS');
+                        $papers = $conn->query($papersSql)->fetch_assoc()['count'];
                         echo "<h3>$papers</h3>";
                         ?>
                     </div>
