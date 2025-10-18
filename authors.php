@@ -1,4 +1,7 @@
-<?php require_once 'config.php'; ?>
+<?php 
+require_once 'config.php';
+require_once __DIR__ . '/includes/sql.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,7 +48,7 @@
                                 <select class="form-select" id="institution_id">
                                     <option value="">Select Institution</option>
                                     <?php
-                                    $institutions = $conn->query("SELECT * FROM Institutions");
+                                    $institutions = $conn->query(sql_named('institutionQuery.sql', 'LIST_WITH_FILTERS') . " LIMIT 1000 OFFSET 0");
                                     while ($inst = $institutions->fetch_assoc()) {
                                         echo "<option value='{$inst['institution_id']}'>{$inst['name']}</option>";
                                     }
