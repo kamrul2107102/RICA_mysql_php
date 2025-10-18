@@ -125,9 +125,14 @@ function handlePostRequest() {
     $name = sanitize_input($data['name']);
     $publisher = isset($data['publisher']) ? sanitize_input($data['publisher']) : null;
     $ISSN = isset($data['ISSN']) ? sanitize_input($data['ISSN']) : null;
+    $eissn = isset($data['eissn']) ? sanitize_input($data['eissn']) : null;
     $impact_factor = isset($data['impact_factor']) ? (float)$data['impact_factor'] : 0.0;
+    $website = isset($data['website']) ? sanitize_input($data['website']) : null;
+    $scope = isset($data['scope']) ? sanitize_input($data['scope']) : null;
+    $open_access = isset($data['open_access']) ? sanitize_input($data['open_access']) : 'No';
+    $country = isset($data['country']) ? sanitize_input($data['country']) : null;
     
-    error_log("Sanitized values - Name: $name, Publisher: $publisher, ISSN: $ISSN, Impact: $impact_factor");
+    error_log("Sanitized values - Name: $name, Publisher: $publisher, ISSN: $ISSN, E-ISSN: $eissn, Impact: $impact_factor, Website: $website, Open Access: $open_access, Country: $country");
     
     // Check if journal already exists
     $checkStmt = $conn->prepare(sql_named('journalQuery.sql', 'CHECK_EXISTS_BY_NAME'));
@@ -144,7 +149,7 @@ function handlePostRequest() {
     }
     
     $stmt = $conn->prepare(sql_named('journalQuery.sql', 'INSERT'));
-    $stmt->bind_param("sssd", $name, $publisher, $ISSN, $impact_factor);
+    $stmt->bind_param("ssssdssss", $name, $publisher, $ISSN, $eissn, $impact_factor, $website, $scope, $open_access, $country);
     
     error_log('Executing INSERT query...');
     
@@ -205,10 +210,40 @@ function handlePutRequest() {
         $types .= 's';
     }
     
+    if (isset($data['eissn'])) {
+        $updates[] = "eissn = ?";
+        $params[] = sanitize_input($data['eissn']);
+        $types .= 's';
+    }
+    
     if (isset($data['impact_factor'])) {
         $updates[] = "impact_factor = ?";
         $params[] = (float)$data['impact_factor'];
         $types .= 'd';
+    }
+    
+    if (isset($data['website'])) {
+        $updates[] = "website = ?";
+        $params[] = sanitize_input($data['website']);
+        $types .= 's';
+    }
+    
+    if (isset($data['scope'])) {
+        $updates[] = "scope = ?";
+        $params[] = sanitize_input($data['scope']);
+        $types .= 's';
+    }
+    
+    if (isset($data['open_access'])) {
+        $updates[] = "open_access = ?";
+        $params[] = sanitize_input($data['open_access']);
+        $types .= 's';
+    }
+    
+    if (isset($data['country'])) {
+        $updates[] = "country = ?";
+        $params[] = sanitize_input($data['country']);
+        $types .= 's';
     }
     
     if (empty($updates)) {

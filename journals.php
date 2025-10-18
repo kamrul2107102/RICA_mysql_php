@@ -42,15 +42,39 @@
                                 <label class="form-label">Publisher</label>
                                 <input type="text" class="form-control" id="publisher">
                             </div>
-                        </div>
-                        <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">ISSN</label>
+                                <label class="form-label">ISSN (Print)</label>
                                 <input type="text" class="form-control" id="ISSN" placeholder="e.g., 1234-5678">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">E-ISSN (Electronic)</label>
+                                <input type="text" class="form-control" id="eissn" placeholder="e.g., 1234-5679">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Impact Factor</label>
                                 <input type="number" class="form-control" id="impact_factor" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Website URL</label>
+                                <input type="url" class="form-control" id="website" placeholder="https://example.com">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Country</label>
+                                <input type="text" class="form-control" id="country" placeholder="e.g., USA, UK, Germany">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Open Access Status</label>
+                                <select class="form-select" id="open_access">
+                                    <option value="No">No (Subscription-based)</option>
+                                    <option value="Yes">Yes (Open Access)</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Scope / Description</label>
+                                <textarea class="form-control" id="scope" rows="3" placeholder="Brief description of journal's research areas and topics"></textarea>
                             </div>
                         </div>
                     </div>
@@ -73,8 +97,10 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Publisher</th>
-                                <th>ISSN</th>
+                                <th>ISSN / E-ISSN</th>
                                 <th>Impact Factor</th>
+                                <th>Open Access</th>
+                                <th>Country</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -101,27 +127,54 @@
         const table = document.getElementById('journalsTable');
 
         if (journals.length === 0) {
-            table.innerHTML = '<tr><td colspan="5" class="text-center">No journals found</td></tr>';
+            table.innerHTML = '<tr><td colspan="7" class="text-center">No journals found</td></tr>';
             return;
         }
 
-        table.innerHTML = journals.map(journal => `
-            <tr>
-                <td>${journal.name}</td>
-                <td>${journal.publisher || '-'}</td>
-                <td>${journal.ISSN || '-'}</td>
-                <td>${journal.impact_factor || '0.00'}</td>
-                <td>
-                    <button class="btn btn-sm btn-warning me-2" onclick="editJournal(${journal.journal_id})">Edit</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteJournal(${journal.journal_id})">Delete</button>
-                </td>
-            </tr>
-        `).join('');
+        table.innerHTML = journals.map(journal => {
+            // Combine ISSN and E-ISSN for display
+            let issnDisplay = [];
+            if (journal.ISSN) issnDisplay.push(journal.ISSN);
+            if (journal.eissn) issnDisplay.push(`E: ${journal.eissn}`);
+            const issnText = issnDisplay.length > 0 ? issnDisplay.join('<br>') : '-';
+            
+            // Open Access badge
+            let accessBadge = '';
+            if (journal.open_access === 'Yes') {
+                accessBadge = '<span class="badge bg-success">Open</span>';
+            } else if (journal.open_access === 'Hybrid') {
+                accessBadge = '<span class="badge bg-warning">Hybrid</span>';
+            } else {
+                accessBadge = '<span class="badge bg-secondary">Subscription</span>';
+            }
+            
+            return `
+                <tr>
+                    <td>
+                        <strong>${journal.name}</strong>
+                        ${journal.website ? `<br><a href="${journal.website}" target="_blank" class="text-muted small"><i class="fas fa-external-link-alt"></i> Website</a>` : ''}
+                    </td>
+                    <td>${journal.publisher || '-'}</td>
+                    <td>${issnText}</td>
+                    <td>${journal.impact_factor || '0.00'}</td>
+                    <td>${accessBadge}</td>
+                    <td>${journal.country || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1" onclick="editJournal(${journal.journal_id})" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteJournal(${journal.journal_id})" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
 
     } catch (error) {
         console.error('Error loading journals:', error);
         document.getElementById('journalsTable').innerHTML =
-            '<tr><td colspan="5" class="text-center text-danger">Error loading data</td></tr>';
+            '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
     }
 }
 
@@ -134,7 +187,12 @@
                 name: document.getElementById('name').value,
                 publisher: document.getElementById('publisher').value || null,
                 ISSN: document.getElementById('ISSN').value || null,
-                impact_factor: document.getElementById('impact_factor').value || 0.0
+                eissn: document.getElementById('eissn').value || null,
+                impact_factor: document.getElementById('impact_factor').value || 0.0,
+                website: document.getElementById('website').value || null,
+                scope: document.getElementById('scope').value || null,
+                open_access: document.getElementById('open_access').value || 'No',
+                country: document.getElementById('country').value || null
             };
 
             const journalId = document.getElementById('journalId').value;
@@ -201,7 +259,12 @@
                 document.getElementById('name').value = journal.name;
                 document.getElementById('publisher').value = journal.publisher || '';
                 document.getElementById('ISSN').value = journal.ISSN || '';
+                document.getElementById('eissn').value = journal.eissn || '';
                 document.getElementById('impact_factor').value = journal.impact_factor || '';
+                document.getElementById('website').value = journal.website || '';
+                document.getElementById('scope').value = journal.scope || '';
+                document.getElementById('open_access').value = journal.open_access || 'No';
+                document.getElementById('country').value = journal.country || '';
 
                 // Scroll to form
                 document.getElementById('journalForm').scrollIntoView({ behavior: 'smooth' });
