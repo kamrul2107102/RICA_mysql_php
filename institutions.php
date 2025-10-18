@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once __DIR__ . '/includes/sql.php';
 require_login();
 ?>
 
@@ -31,7 +32,7 @@ require_login();
                         <i class="fas fa-university fa-2x mb-2"></i>
                         <h5>Total Institutions</h5>
                         <?php
-                        $total = $conn->query("SELECT COUNT(*) as count FROM Institutions")->fetch_assoc()['count'];
+                        $total = $conn->query(sql_named('institutionQuery.sql', 'COUNT_TOTAL'))->fetch_assoc()['count'];
                         echo "<h3>$total</h3>";
                         ?>
                     </div>
@@ -43,7 +44,7 @@ require_login();
                         <i class="fas fa-globe fa-2x mb-2"></i>
                         <h5>Countries</h5>
                         <?php
-                        $countries = $conn->query("SELECT COUNT(DISTINCT country) as count FROM Institutions")->fetch_assoc()['count'];
+                        $countries = $conn->query(sql_named('institutionQuery.sql', 'COUNT_COUNTRIES'))->fetch_assoc()['count'];
                         echo "<h3>$countries</h3>";
                         ?>
                     </div>
