@@ -141,7 +141,12 @@ function handlePostRequest() {
     
     $data = get_json_input();
     
+    // Debug logging
+    error_log('=== PAPERS POST REQUEST START ===');
+    error_log('POST Data received: ' . print_r($data, true));
+    
     if (!isset($data['title']) || !isset($data['publication_year'])) {
+        error_log('ERROR: Title or publication year missing');
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => 'Title and publication year are required']);
         return;
@@ -153,11 +158,16 @@ function handlePostRequest() {
     $conference_id = isset($data['conference_id']) ? (int)$data['conference_id'] : null;
     $journal_id = isset($data['journal_id']) ? (int)$data['journal_id'] : null;
     
+    error_log("Sanitized values - Title: $title, Year: $publication_year, Journal: $journal_id, Conference: $conference_id");
+    
     $stmt = $conn->prepare(sql_named('paperQuery.sql', 'INSERT'));
     $stmt->bind_param("sisii", $title, $publication_year, $abstract, $conference_id, $journal_id);
     
+    error_log('Executing INSERT query...');
+    
     if ($stmt->execute()) {
         $paper_id = $conn->insert_id;
+        error_log("SUCCESS: Paper inserted with ID: $paper_id");
         
         $stmt = $conn->prepare(sql_named('paperQuery.sql', 'GET_ONE_WITH_DETAILS'));
         $stmt->bind_param("i", $paper_id);
@@ -171,6 +181,7 @@ function handlePostRequest() {
             'data' => $paper
         ]);
     } else {
+        error_log('ERROR: Failed to insert paper - ' . $conn->error);
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => 'Failed to create paper: ' . $conn->error]);
     }

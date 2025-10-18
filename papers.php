@@ -209,26 +209,50 @@ require_once __DIR__ . '/includes/sql.php';
 
         // Edit paper
         async function editPaper(id) {
-            const response = await fetch(`api/papers.php?id=${id}`);
-            const paper = await response.json();
-            
-            document.getElementById('paperId').value = paper.paper_id;
-            document.getElementById('title').value = paper.title;
-            document.getElementById('publication_year').value = paper.publication_year;
-            document.getElementById('abstract').value = paper.abstract || '';
-            document.getElementById('journal_id').value = paper.journal_id || '';
-            document.getElementById('conference_id').value = paper.conference_id || '';
+            try {
+                const response = await fetch(`api/papers.php?id=${id}`);
+                const paper = await response.json();
+                
+                document.getElementById('paperId').value = paper.paper_id;
+                document.getElementById('title').value = paper.title;
+                document.getElementById('publication_year').value = paper.publication_year;
+                document.getElementById('abstract').value = paper.abstract || '';
+                document.getElementById('journal_id').value = paper.journal_id || '';
+                document.getElementById('conference_id').value = paper.conference_id || '';
+                
+                // Scroll to form
+                document.getElementById('paperForm').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error('Error loading paper:', error);
+                showAlert('Error loading paper data', 'danger');
+            }
         }
 
         // Delete paper
         async function deletePaper(id) {
-            if (confirm('Are you sure you want to delete this paper?')) {
-                const response = await fetch(`api/papers.php`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `id=${id}`
-                });
-                if (response.ok) loadPapers();
+            if (confirm('Are you sure you want to delete this paper? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`api/papers.php`, {
+                        method: 'DELETE',
+                        headers: { 
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Accept': 'application/json'
+                        },
+                        body: `id=${id}`
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        loadPapers();
+                        showAlert('Paper deleted successfully!', 'success');
+                    } else {
+                        showAlert('Error deleting paper', 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error deleting paper:', error);
+                    showAlert('Error deleting paper', 'danger');
+                }
             }
         }
 
@@ -243,8 +267,28 @@ require_once __DIR__ . '/includes/sql.php';
             window.open(`api/export.php?table=${table}`, '_blank');
         }
 
+        // Show alert
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Remove alert after 3 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+
         // Load data on page load
-        loadPapers();
+        document.addEventListener('DOMContentLoaded', loadPapers);
     </script>
 </body>
 </html>
