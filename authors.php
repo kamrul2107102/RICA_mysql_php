@@ -53,7 +53,7 @@ require_once __DIR__ . '/includes/sql.php';
                                 <select class="form-select" id="institution_id">
                                     <option value="">Select Institution</option>
                                     <?php
-                                    $institutions = $conn->query(sql_named('institutionQuery.sql', 'LIST_WITH_FILTERS') . " LIMIT 1000 OFFSET 0");
+                                    $institutions = $conn->query("SELECT institution_id, name FROM Institutions ORDER BY name LIMIT 1000");
                                     while ($inst = $institutions->fetch_assoc()) {
                                         echo "<option value='{$inst['institution_id']}'>{$inst['name']}</option>";
                                     }

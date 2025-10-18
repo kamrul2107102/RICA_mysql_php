@@ -124,9 +124,6 @@
     box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.3);
   }
   
-  body.dark-theme .btn { color: #fff; background-color: var(--primary-color); border: 1px solid var(--primary-color); }
-  body.light-theme .btn { color: #fff; background-color: var(--primary-color); border: 1px solid var(--primary-color); }
-  
   .btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.5);
